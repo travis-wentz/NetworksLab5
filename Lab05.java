@@ -10,11 +10,13 @@ import java.util.Scanner;
  */
 public class Lab05 {
 	
+	// Static variables for the initial data read from "configuration.txt"
 	public static int xport, yport, zport;
 	public static ArrayList<Integer> xvec = new ArrayList<Integer>();
 	public static ArrayList<Integer> yvec = new ArrayList<Integer>();
 	public static ArrayList<Integer> zvec = new ArrayList<Integer>();
 	
+	// Method to read "configuration.txt" and initialize variables
 	public static void readConfig() throws IOException{
 		Scanner sc = new Scanner(new File("configuration.txt"));
 		if(sc.hasNextInt()){
@@ -56,12 +58,22 @@ public class Lab05 {
 		
 		sc.close();
 	}
-
+	
+	// Method to run Bellman-Ford equation on all routers for 1 round.  Requires passing
+	//  open sockets for UDP communication.
+	public static void bellmanFord(DatagramSocket x, DatagramSocket y, DatagramSocket z) throws IOException{
+		
+	}
+	
+	// Main method uses UDP API to implement Distance Vector Routing Algorithm
 	public static void main(String[] args) throws IOException {
+		// Initialize variables from text file
 		readConfig();
 		
+		// Initialize Local IP Address for UDP 
 		InetAddress IPAddress = InetAddress.getLocalHost();
 		
+		// Open sockets for communications
 		DatagramSocket xsocket = null;
 		DatagramSocket ysocket = null;
 		DatagramSocket zsocket = null;
@@ -74,6 +86,7 @@ public class Lab05 {
 			System.out.println("Exception occurred when creating sockets");
 		}
 		
+		// Initialize arrays for sending UDP information
 		byte[] xrcvData = new byte[4];
 		byte[] xsendData = new byte[4];
 		byte[] yrcvData = new byte[4];
@@ -81,26 +94,32 @@ public class Lab05 {
 		byte[] zrcvData = new byte[4];
 		byte[] zsendData = new byte[4];
 		
-		String sentence = "Hi";
-	    xsendData = sentence.getBytes();
+		// Get user input to see which router we simulate
+		Scanner input = new Scanner(System.in);
+		System.out.println("Enter the router's id (X, Y, Z): ");
+		String router = input.next().toLowerCase();
+		input.close();
 		
-		try{
-			DatagramPacket xsendPkt = new DatagramPacket(xsendData, xsendData.length, IPAddress, yport);
-			DatagramPacket yrcvPkt = new DatagramPacket(yrcvData, yrcvData.length);
-			xsocket.send(xsendPkt);
-			ysocket.receive(yrcvPkt);
-			String rsentence = new String( yrcvPkt.getData());
-			System.out.println(rsentence);
-		} catch(Exception e){
-			System.out.println("Exception occurred when receiving");
-		} finally {
-			xsocket.close();
-			ysocket.close();
-			zsocket.close();
+		if(router.equals("x")){
+			System.out.println("Router X is running on port " + xport);
+			System.out.println("Distance vector on Router X is:");
+			System.out.println(xvec);
+		} else if(router.equals("y")){
+			System.out.println("Router Y is running on port " + yport);
+			System.out.println("Distance vector on Router Y is:");
+			System.out.println(yvec);
+		} else if(router.equals("z")){
+			System.out.println("Router Z is running on port " + zport);
+			System.out.println("Distance vector on Router Z is:");
+			System.out.println(zvec);
+		} else {
+			System.out.println("Invalid Selection!");
 		}
 		
-		//System.out.println(rsentence);
-		//System.out.println(ysocket.getLocalPort());
+		xsocket.close();
+		ysocket.close();
+		zsocket.close();
+		
 		System.out.println("Bye!");
 	}
 
