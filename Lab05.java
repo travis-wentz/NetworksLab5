@@ -59,18 +59,55 @@ public class Lab05 {
 		sc.close();
 	}
 	
-	// Method to run Bellman-Ford equation on all routers until fully updated.  Requires passing open sockets for UDP communication.
-	public static void bellmanFord(DatagramSocket x, DatagramSocket y, DatagramSocket z, String router) throws IOException{
+	// Method to use UDP API for local communication between 2 ports
+	public static ArrayList<Integer> udpSend(DatagramSocket sender, DatagramSocket receiver, ArrayList<Integer> data){
+		
 		// Initialize Local IP Address for UDP 
-		InetAddress IPAddress = InetAddress.getLocalHost();
+		InetAddress IPAddress = null;
+		try{
+			IPAddress = InetAddress.getLocalHost();
+		} catch(Exception e){
+			System.out.println("Exception occurred finding local host");
+		}
 		
 		// Initialize arrays for sending UDP information
-		byte[] xrcvData = new byte[4];
-		byte[] xsendData = new byte[4];
-		byte[] yrcvData = new byte[4];
-		byte[] ysendData = new byte[4];
-		byte[] zrcvData = new byte[4];
-		byte[] zsendData = new byte[4];
+		byte[] rcvData = new byte[4];
+		byte[] sendData = new byte[4];
+		
+		// Add vector data into sendData to send to receiver
+		sendData[0] = data.get(0).byteValue();
+		sendData[1] = data.get(1).byteValue();
+		sendData[2] = data.get(2).byteValue();
+		
+		try{
+			DatagramPacket sendPkt = new DatagramPacket(sendData, sendData.length, IPAddress, receiver.getLocalPort());
+			DatagramPacket rcvPkt = new DatagramPacket(rcvData, rcvData.length);
+			sender.send(sendPkt);
+			receiver.receive(rcvPkt);
+		} catch(Exception e){
+			System.out.println("Exception occurred during UDP communication");
+		} 
+		
+		// ArrayList represents data received over UDP socket
+		ArrayList<Integer> payload = new ArrayList<Integer>();
+		
+		// Unpack received data and populate ArrayList and return
+		int x = rcvData[0];
+		int y = rcvData[1];
+		int z = rcvData[2];
+		
+		payload.add(x);
+		payload.add(y);
+		payload.add(z);
+		
+		return payload;
+	}
+	
+	// Method to run Bellman-Ford equation on all routers until fully updated.  Requires passing open sockets for UDP communication.
+	public static void bellmanFord(DatagramSocket x, DatagramSocket y, DatagramSocket z, String router) throws IOException{
+		
+		// Distance Vector received from another router stored in ArrayList
+		ArrayList<Integer> neighbor = null;
 		
 		// Boolean variables to track when routers update their vectors
 		boolean xchanged = true;
@@ -84,19 +121,20 @@ public class Lab05 {
 			boolean changeXtoY = false;
 			//y sends to x
 			if(ychanged){
+				neighbor = udpSend(y, x, yvec);
 				if(router.equals("x")){
 					System.out.print("Receives distance vector from router Y: ");
-					System.out.println(yvec);
-					if(xvec.get(1) + yvec.get(2) < xvec.get(2)){
+					System.out.println(neighbor);
+					if(xvec.get(1) + neighbor.get(2) < xvec.get(2)){
 						System.out.println("Distance vector on router X is updated to:");
-						System.out.println("[" + xvec.get(0) + " ," + xvec.get(1) + " ," + (xvec.get(1) + yvec.get(2)) + "]");
+						System.out.println("[" + xvec.get(0) + ", " + xvec.get(1) + ", " + (xvec.get(1) + neighbor.get(2)) + "]");
 						changeXtoZ = true;
 						xchanged = true;
 					}else{
 						System.out.println("Distance vector on router X is not updated");
 					}
 				}else{
-					if(xvec.get(1) + yvec.get(2) < xvec.get(2)){
+					if(xvec.get(1) + neighbor.get(2) < xvec.get(2)){
 						changeXtoZ = true;
 						xchanged = true;
 					}
@@ -104,19 +142,20 @@ public class Lab05 {
 			}
 			//z sends to x
 			if(zchanged){
+				neighbor = udpSend(z, x, zvec);
 				if(router.equals("x")){
 					System.out.print("Receives distance vector from router Z: ");
-					System.out.println(zvec);
-					if(xvec.get(2) + zvec.get(1) < xvec.get(1)){
+					System.out.println(neighbor);
+					if(xvec.get(2) + neighbor.get(1) < xvec.get(1)){
 						System.out.println("Distance vector on router X is updated to:");
-						System.out.println("[" + xvec.get(0) + " ," + (xvec.get(2) + zvec.get(1)) + " ," + xvec.get(2) + "]");
+						System.out.println("[" + xvec.get(0) + ", " + (xvec.get(2) + neighbor.get(1)) + ", " + xvec.get(2) + "]");
 						changeXtoY = true;
 						xchanged = true;
 					}else{
 						System.out.println("Distance vector on router X is not updated");
 					}
 				}else{
-					if(xvec.get(2) + zvec.get(1) < xvec.get(1)){
+					if(xvec.get(2) + neighbor.get(1) < xvec.get(1)){
 						changeXtoY = true;
 						xchanged = true;
 					}
@@ -128,19 +167,20 @@ public class Lab05 {
 			boolean changeYtoX = false;
 			//x sends to y
 			if(xchanged){
+				neighbor = udpSend(x, y, xvec);
 				if(router.equals("y")){
 					System.out.print("Receives distance vector from router X: ");
-					System.out.println(xvec);
-					if(yvec.get(0) + xvec.get(2) < yvec.get(2)){
+					System.out.println(neighbor);
+					if(yvec.get(0) + neighbor.get(2) < yvec.get(2)){
 						System.out.println("Distance vector on router Y is updated to:");
-						System.out.println("[" + yvec.get(0) + " ," + yvec.get(1) + " ," + (yvec.get(0) + xvec.get(2)) + "]");
+						System.out.println("[" + yvec.get(0) + ", " + yvec.get(1) + ", " + (yvec.get(0) + neighbor.get(2)) + "]");
 						changeYtoZ = true;
 						ychanged = true;
 					}else{
 						System.out.println("Distance vector on router Y is not updated");
 					}
 				}else{
-					if(yvec.get(0) + xvec.get(2) < yvec.get(2)){
+					if(yvec.get(0) + neighbor.get(2) < yvec.get(2)){
 						changeYtoZ = true;
 						ychanged = true;
 					}
@@ -148,19 +188,20 @@ public class Lab05 {
 			}
 			//z sends to y
 			if(zchanged){
+				neighbor = udpSend(z, x, zvec);
 				if(router.equals("y")){
 					System.out.print("Receives distance vector from router Z: ");
-					System.out.println(zvec);
-					if(yvec.get(2) + zvec.get(0) < yvec.get(0)){
+					System.out.println(neighbor);
+					if(yvec.get(2) + neighbor.get(0) < yvec.get(0)){
 						System.out.println("Distance vector on router Z is updated to:");
-						System.out.println("[" + (yvec.get(2) + zvec.get(0)) + " ," + yvec.get(1) + " ," + yvec.get(2) + "]");
+						System.out.println("[" + (yvec.get(2) + neighbor.get(0)) + ", " + yvec.get(1) + ", " + yvec.get(2) + "]");
 						changeYtoX = true;
 						ychanged = true;
 					}else{
 						System.out.println("Distance vector on router Y is not updated");
 					}
 				}else{
-					if(yvec.get(2) + zvec.get(0) < yvec.get(0)){
+					if(yvec.get(2) + neighbor.get(0) < yvec.get(0)){
 						changeYtoX = true;
 						ychanged = true;
 					}
@@ -172,19 +213,20 @@ public class Lab05 {
 			boolean changeZtoX = false;
 			//x sends to z
 			if(xchanged){
+				neighbor = udpSend(x, z, xvec);
 				if(router.equals("z")){
 					System.out.print("Receives distance vector from router X: ");
-					System.out.println(xvec);
-					if(zvec.get(0) + xvec.get(1) < zvec.get(1)){
+					System.out.println(neighbor);
+					if(zvec.get(0) + neighbor.get(1) < zvec.get(1)){
 						System.out.println("Distance vector on router Z is updated to:");
-						System.out.println("[" + zvec.get(0) + " ," + (zvec.get(0) + xvec.get(1)) + " ," + zvec.get(2) + "]");
+						System.out.println("[" + zvec.get(0) + ", " + (zvec.get(0) + neighbor.get(1)) + ", " + zvec.get(2) + "]");
 						changeZtoY = true;
 						zchanged = true;
 					}else{
 						System.out.println("Distance vector on router Z is not updated");
 					}
 				}else{
-					if(zvec.get(0) + xvec.get(1) < zvec.get(1)){
+					if(zvec.get(0) + neighbor.get(1) < zvec.get(1)){
 						changeZtoY = true;
 						zchanged = true;
 					}
@@ -192,19 +234,20 @@ public class Lab05 {
 			}
 			//y sends to z
 			if(ychanged){
+				neighbor = udpSend(y, z, yvec);
 				if(router.equals("z")){
 					System.out.print("Receives distance vector from router Y: ");
-					System.out.println(yvec);
-					if(zvec.get(1) + yvec.get(0) < zvec.get(0)){
+					System.out.println(neighbor);
+					if(zvec.get(1) + neighbor.get(0) < zvec.get(0)){
 						System.out.println("Distance vector on router Z is updated to:");
-						System.out.println("[" + (zvec.get(1) + yvec.get(0)) + " ," + zvec.get(1) + " ," + zvec.get(2) + "]");
+						System.out.println("[" + (zvec.get(1) + neighbor.get(0)) + ", " + zvec.get(1) + ", " + zvec.get(2) + "]");
 						changeZtoX = true;
 						zchanged = true;
 					}else{
 						System.out.println("Distance vector on router Z is not updated");
 					}
 				}else{
-					if(zvec.get(1) + yvec.get(0) < zvec.get(0)){
+					if(zvec.get(1) + neighbor.get(0) < zvec.get(0)){
 						changeZtoX = true;
 						zchanged = true;
 					}
