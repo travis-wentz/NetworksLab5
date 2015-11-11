@@ -61,8 +61,179 @@ public class Lab05 {
 	
 	// Method to run Bellman-Ford equation on all routers for 1 round.  Requires passing
 	//  open sockets for UDP communication.
-	public static void bellmanFord(DatagramSocket x, DatagramSocket y, DatagramSocket z) throws IOException{
-		
+	public static void bellmanFord(DatagramSocket x, DatagramSocket y, DatagramSocket z, String router) throws IOException{
+		boolean xchanged = true;
+		boolean ychanged = true;
+		boolean zchanged = true;
+		while(xchanged || ychanged || zchanged){
+			//changed routers push to x
+			boolean changeXtoZ = false;
+			boolean changeXtoY = false;
+			//y pushes to x
+			if(ychanged){
+				if(router.equals("x")){
+					System.out.print("Receives distance vector from router Y: ");
+					System.out.println(yvec);
+					if(xvec.get(1) + yvec.get(2) < xvec.get(2)){
+						System.out.println("Distance vector on router X is updated to:");
+						System.out.println("[" + xvec.get(0) + "," + xvec.get(1) + "," + (xvec.get(1) + yvec.get(2)) + "]");
+						changeXtoZ = true;
+						xchanged = true;
+					}else{
+						System.out.println("Distance vector on router X is not updated");
+					}
+				}else{
+					if(xvec.get(1) + yvec.get(2) < xvec.get(2)){
+						changeXtoZ = true;
+						xchanged = true;
+					}
+				}
+			}
+			//z pushes to x
+			if(zchanged){
+				if(router.equals("x")){
+					System.out.print("Receives distance vector from router Z: ");
+					System.out.println(zvec);
+					if(xvec.get(2) + zvec.get(1) < xvec.get(1)){
+						System.out.println("Distance vector on router X is updated to:");
+						System.out.println("[" + xvec.get(0) + "," + (xvec.get(2) + zvec.get(1)) + "," + xvec.get(2) + "]");
+						changeXtoY = true;
+						xchanged = true;
+					}else{
+						System.out.println("Distance vector on router X is not updated");
+					}
+				}else{
+					if(xvec.get(2) + zvec.get(1) < xvec.get(1)){
+						changeXtoY = true;
+						xchanged = true;
+					}
+				}
+			}
+			
+			//changed routers push to y
+			boolean changeYtoZ = false;
+			boolean changeYtoX = false;
+			//x pushes to y
+			if(xchanged){
+				if(router.equals("y")){
+					System.out.print("Receives distance vector from router X: ");
+					System.out.println(xvec);
+					if(yvec.get(0) + xvec.get(2) < yvec.get(2)){
+						System.out.println("Distance vector on router Y is updated to:");
+						System.out.println("[" + yvec.get(0) + "," + yvec.get(1) + "," + (yvec.get(0) + xvec.get(2)) + "]");
+						changeYtoZ = true;
+						ychanged = true;
+					}else{
+						System.out.println("Distance vector on router Y is not updated");
+					}
+				}else{
+					if(yvec.get(0) + xvec.get(2) < yvec.get(2)){
+						changeYtoZ = true;
+						ychanged = true;
+					}
+				}
+			}
+			//z pushes to y
+			if(zchanged){
+				if(router.equals("y")){
+					System.out.print("Receives distance vector from router Z: ");
+					System.out.println(zvec);
+					if(yvec.get(2) + zvec.get(0) < yvec.get(0)){
+						System.out.println("Distance vector on router Z is updated to:");
+						System.out.println("[" + (yvec.get(2) + zvec.get(0)) + "," + yvec.get(1) + "," + yvec.get(2) + "]");
+						changeYtoX = true;
+						ychanged = true;
+					}else{
+						System.out.println("Distance vector on router Y is not updated");
+					}
+				}else{
+					if(yvec.get(2) + zvec.get(0) < yvec.get(0)){
+						changeYtoX = true;
+						ychanged = true;
+					}
+				}
+			}
+			
+			//changed routers push to z
+			boolean changeZtoY = false;
+			boolean changeZtoX = false;
+			//x pushes to z
+			if(xchanged){
+				if(router.equals("z")){
+					System.out.print("Receives distance vector from router X: ");
+					System.out.println(xvec);
+					if(zvec.get(0) + xvec.get(1) < zvec.get(1)){
+						System.out.println("Distance vector on router Z is updated to:");
+						System.out.println("[" + zvec.get(0) + "," + (zvec.get(0) + xvec.get(1)) + "," + zvec.get(2) + "]");
+						changeZtoY = true;
+						zchanged = true;
+					}else{
+						System.out.println("Distance vector on router Z is not updated");
+					}
+				}else{
+					if(zvec.get(0) + xvec.get(1) < zvec.get(1)){
+						changeZtoY = true;
+						zchanged = true;
+					}
+				}
+			}
+			//y pushes to z
+			if(ychanged){
+				if(router.equals("z")){
+					System.out.print("Receives distance vector from router Y: ");
+					System.out.println(yvec);
+					if(zvec.get(1) + yvec.get(0) < zvec.get(0)){
+						System.out.println("Distance vector on router Z is updated to:");
+						System.out.println("[" + (zvec.get(1) + yvec.get(0)) + "," + zvec.get(1) + "," + zvec.get(2) + "]");
+						changeZtoX = true;
+						zchanged = true;
+					}else{
+						System.out.println("Distance vector on router Z is not updated");
+					}
+				}else{
+					if(zvec.get(1) + yvec.get(0) < zvec.get(0)){
+						changeZtoX = true;
+						zchanged = true;
+					}
+				}
+			}
+			
+			if(xchanged){
+				if(changeXtoZ){
+					xvec.set(2, (xvec.get(1) + yvec.get(2)));
+				}
+				if(changeXtoY){
+					xvec.set(1, (xvec.get(2) + zvec.get(1)));
+				}
+				if(!changeXtoZ && !changeXtoY){
+					xchanged = false;
+				}
+			}
+			
+			if(ychanged){
+				if(changeYtoZ){
+					yvec.set(2, (yvec.get(0) + xvec.get(2)));
+				}
+				if(changeYtoX){
+					yvec.set(0, (yvec.get(2) + zvec.get(0)));
+				}
+				if(!changeYtoZ && !changeYtoX){
+					ychanged = false;
+				}
+			}
+			
+			if(zchanged){
+				if(changeZtoY){
+					zvec.set(1, (zvec.get(0) + xvec.get(1)));
+				}
+				if(changeZtoX){
+					zvec.set(0, (zvec.get(1) + yvec.get(0)));
+				}
+				if(!changeZtoY && !changeZtoX){
+					zchanged = false;
+				}
+			}
+		}
 	}
 	
 	// Main method uses UDP API to implement Distance Vector Routing Algorithm
@@ -86,17 +257,17 @@ public class Lab05 {
 			System.out.println("Exception occurred when creating sockets");
 		}
 		
-		// Initialize arrays for sending UDP information
-		byte[] xrcvData = new byte[4];
-		byte[] xsendData = new byte[4];
-		byte[] yrcvData = new byte[4];
-		byte[] ysendData = new byte[4];
-		byte[] zrcvData = new byte[4];
-		byte[] zsendData = new byte[4];
+//		// Initialize arrays for sending UDP information
+//		byte[] xrcvData = new byte[4];
+//		byte[] xsendData = new byte[4];
+//		byte[] yrcvData = new byte[4];
+//		byte[] ysendData = new byte[4];
+//		byte[] zrcvData = new byte[4];
+//		byte[] zsendData = new byte[4];
 		
 		// Get user input to see which router we simulate
 		Scanner input = new Scanner(System.in);
-		System.out.println("Enter the router's id (X, Y, Z): ");
+		System.out.print("Enter the router's id (X, Y, Z): ");
 		String router = input.next().toLowerCase();
 		input.close();
 		
@@ -115,6 +286,8 @@ public class Lab05 {
 		} else {
 			System.out.println("Invalid Selection!");
 		}
+
+		bellmanFord(xsocket, ysocket, zsocket, router);
 		
 		xsocket.close();
 		ysocket.close();
